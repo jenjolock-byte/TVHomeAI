@@ -7,6 +7,8 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -222,14 +224,28 @@ private fun TVHomeScreen(
                 }
             }
 
-            Column(
+            Box(
                 modifier = Modifier.fillMaxWidth()
+                    .height(if (compact) 245.dp else 310.dp)
                     .clip(RoundedCornerShape(if (compact) 22.dp else 26.dp))
-                    .background(HeroGradient)
                     .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(if (compact) 22.dp else 26.dp))
-                    .padding(if (compact) 20.dp else 30.dp),
-                verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 13.dp)
             ) {
+                AsyncImage(
+                    model = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&q=85",
+                    contentDescription = "Featured cinematic landscape",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(Modifier.fillMaxSize().background(
+                    Brush.horizontalGradient(listOf(Color(0xF008090E), Color(0xB808090E), Color(0x1808090E)))
+                ))
+                Box(Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(listOf(Color(0x1608090E), Color(0xD808090E)))
+                ))
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(if (compact) 20.dp else 30.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 13.dp)
+                ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(Accent))
                     Text(
@@ -262,7 +278,6 @@ private fun TVHomeScreen(
                     }
                 }
             }
-
             Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Your Apps", color = MainText, fontSize = if (compact) 17.sp else 20.sp, fontWeight = FontWeight.Bold)
