@@ -278,6 +278,7 @@ private fun TVHomeScreen(
                     }
                 }
             }
+            }
             Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Your Apps", color = MainText, fontSize = if (compact) 17.sp else 20.sp, fontWeight = FontWeight.Bold)
