@@ -1,4 +1,4 @@
-name: Build CleanYourTV stable APK
+name: Build CleanYourTV minimal-permission APK
 
 on:
   workflow_dispatch:
@@ -29,16 +29,38 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Build CleanYourTV release APK
+      - name: Apply minimal-permission profile
+        working-directory: upstream/launcher
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          p = "app/src/main/AndroidManifest.xml"
+          ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
+          ET.register_namespace("tools", "http://schemas.android.com/tools")
+          tree = ET.parse(p)
+          root = tree.getroot()
+          A = "{http://schemas.android.com/apk/res/android}"
+          for node in list(root):
+              if node.tag == "uses-permission" and node.get(A+"name") == "android.permission.ACCESS_FINE_LOCATION":
+                  root.remove(node)
+              if node.tag == "application":
+                  for child in list(node):
+                      if child.tag == "service" and child.get(A+"name") in (".HomeKeyService", ".InputKeyService"):
+                          node.remove(child)
+          tree.write(p, encoding="utf-8", xml_declaration=True)
+          print("Removed fine-location permission and optional accessibility services from this build.")
+          PY
+
+      - name: Build release APK and run tests
         working-directory: upstream/launcher
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon test assembleRelease
+          ./gradlew --no-daemon clean test assembleRelease
 
       - name: Upload APK and test reports
         uses: actions/upload-artifact@v4
         with:
-          name: CleanYourTV-stable-release
+          name: CleanYourTV-minimal-permission-release
           path: |
             upstream/launcher/app/build/outputs/apk/release/*.apk
             upstream/launcher/app/build/reports/tests/
