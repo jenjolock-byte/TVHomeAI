@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
                             else Toast.makeText(this, "Unable to open app", Toast.LENGTH_SHORT).show()
                         },
                         onOpenSettings = { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) },
+                        onOpenWifi = { startActivity(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)) },
                         onAppInfo = { packageName ->
                             startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
                         },
@@ -117,6 +118,7 @@ class MainActivity : ComponentActivity() {
 private fun TVHomeScreen(
     onOpenApp: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenWifi: () -> Unit,
     onAppInfo: (String) -> Unit,
     onUninstall: (String) -> Unit,
     loadApps: () -> List<LaunchApp>
@@ -160,7 +162,7 @@ private fun TVHomeScreen(
                 }
                 Spacer(Modifier.weight(1f))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    FocusAction("Wi-Fi", { startActivity(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)) }, compact, iconType = "wifi")
+                    FocusAction("Wi-Fi", onOpenWifi, compact, iconType = "wifi")
                     FocusAction("Settings", onOpenSettings, compact)
                     FocusAction("Apps", { if (apps.isNotEmpty()) onOpenApp(apps.first().packageName) }, compact, iconType = "apps")
                 }
