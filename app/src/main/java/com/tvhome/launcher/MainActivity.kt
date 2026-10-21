@@ -31,6 +31,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -83,7 +85,7 @@ class MainActivity : ComponentActivity() {
                         onOpenApp = { packageName ->
                             val intent = packageManager.getLaunchIntentForPackage(packageName)
                             if (intent != null) startActivity(intent)
-                            else Toast.makeText(this, "Aplikasi tidak boleh dibuka", Toast.LENGTH_SHORT).show()
+                            else Toast.makeText(this, "Unable to open app", Toast.LENGTH_SHORT).show()
                         },
                         onOpenSettings = { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) },
                         onAppInfo = { packageName ->
@@ -154,10 +156,14 @@ private fun TVHomeScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text("TVHomeAI", color = MainText, fontSize = if (compact) 21.sp else 27.sp,
                         fontWeight = FontWeight.ExtraBold)
-                    Text("Hiburan anda, satu skrin", color = MutedText, fontSize = if (compact) 11.sp else 13.sp)
+                    Text("Your entertainment, one screen", color = MutedText, fontSize = if (compact) 11.sp else 13.sp)
                 }
                 Spacer(Modifier.weight(1f))
-                FocusAction("Tetapan", onOpenSettings, compact)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    FocusAction("Wi-Fi", { startActivity(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)) }, compact, iconType = "wifi")
+                    FocusAction("Settings", onOpenSettings, compact)
+                    FocusAction("Apps", { if (apps.isNotEmpty()) onOpenApp(apps.first().packageName) }, compact, iconType = "apps")
+                }
             }
 
             Column(
@@ -171,21 +177,21 @@ private fun TVHomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(Accent))
                     Text(
-                        if (selectedApp.value == null) "SELAMAT DATANG" else "DIPILIH UNTUK ANDA",
+                        if (selectedApp.value == null) "WELCOME" else "FEATURED FOR YOU",
                         color = Color(0xFFFFAAA4), fontSize = 10.sp,
                         fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp
                     )
                 }
                 Text(
-                    selectedApp.value?.label ?: "Apa yang anda mahu tonton?",
+                    selectedApp.value?.label ?: "What would you like to watch?",
                     color = MainText, fontSize = if (compact) 25.sp else 34.sp,
                     lineHeight = if (compact) 30.sp else 40.sp, fontWeight = FontWeight.Bold,
                     maxLines = 2, overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     when {
-                        selectedApp.value == null -> if (apps.isEmpty()) "Aplikasi yang dipasang akan muncul di sini." else "Halakan remote pada aplikasi untuk melihat panel ini berubah."
-                        else -> "Aplikasi dipilih • Tekan OK untuk buka"
+                        selectedApp.value == null -> if (apps.isEmpty()) "Your installed apps will appear here." else "Focus an app to update this panel."
+                        else -> "Selected app • Press OK to launch"
                     },
                     color = Color(0xFFD0C5CE), fontSize = if (compact) 12.sp else 15.sp,
                     lineHeight = if (compact) 17.sp else 21.sp
@@ -195,7 +201,7 @@ private fun TVHomeScreen(
                         AppIcon(app, if (compact) 34.dp else 42.dp)
                         Column {
                             Text(app.label, color = MainText, fontSize = if (compact) 13.sp else 15.sp, fontWeight = FontWeight.SemiBold)
-                            Text("Aplikasi terpasang pada peranti ini", color = Color(0xFFC7B8C4), fontSize = 10.sp)
+                            Text("Installed on this device", color = Color(0xFFC7B8C4), fontSize = 10.sp)
                         }
                     }
                 }
@@ -203,9 +209,9 @@ private fun TVHomeScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Aplikasi anda", color = MainText, fontSize = if (compact) 17.sp else 20.sp, fontWeight = FontWeight.Bold)
+                    Text("Your Apps", color = MainText, fontSize = if (compact) 17.sp else 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.weight(1f))
-                    Text("${apps.size} aplikasi", color = MutedText, fontSize = 11.sp)
+                    Text("${apps.size} apps", color = MutedText, fontSize = 11.sp)
                 }
                 if (apps.isEmpty()) {
                     Box(
@@ -213,7 +219,7 @@ private fun TVHomeScreen(
                             .background(Panel).padding(20.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Belum ada aplikasi untuk dipaparkan.", color = MutedText, fontSize = 14.sp)
+                        Text("No apps available to display.", color = MutedText, fontSize = 14.sp)
                     }
                 } else {
                     LazyRow(
@@ -250,7 +256,7 @@ private fun TVHomeScreen(
             }
             Spacer(Modifier.weight(1f, fill = false))
             Text(
-                if (compact) "Pilih aplikasi • Tekan untuk buka" else "◀ ▶ Navigasi     •     OK Pilih     •     Tetapan untuk sistem",
+                if (compact) "Select an app • Press OK to launch" else "◀ ▶ Navigate     •     OK Select     •     Settings",
                 color = MutedText, fontSize = if (compact) 10.sp else 11.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
@@ -292,19 +298,19 @@ private fun AppCard(
             title = { Text(app.label, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    MenuRow("App Info", "Maklumat aplikasi") {
+                    MenuRow("App Info", "Application details") {
                         showMenu.value = false
                         onAppInfo()
                     }
-                    MenuRow("Move ke kiri", "Ubah kedudukan ikon") {
+                    MenuRow("Move Left", "Change app position") {
                         showMenu.value = false
                         onMove(-1)
                     }
-                    MenuRow("Move ke kanan", "Ubah kedudukan ikon") {
+                    MenuRow("Move Right", "Ubah kedudukan ikon") {
                         showMenu.value = false
                         onMove(1)
                     }
-                    MenuRow(if (isFavorite) "Buang daripada Favorite" else "Tambah ke Favorite", "Kegemaran TVHomeAI") {
+                    MenuRow(if (isFavorite) "Remove from Favorites" else "Add to Favorites", "TVHomeAI favorites") {
                         onToggleFavorite()
                         showMenu.value = false
                     }
@@ -315,7 +321,7 @@ private fun AppCard(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showMenu.value = false }) { Text("Tutup", color = Accent) }
+                TextButton(onClick = { showMenu.value = false }) { Text("Close", color = Accent) }
             }
         )
     }
@@ -385,7 +391,7 @@ private fun MenuRow(title: String, subtitle: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FocusAction(label: String, onClick: () -> Unit, compact: Boolean) {
+private fun FocusAction(label: String, onClick: () -> Unit, compact: Boolean, iconType: String = "settings") {
     val focused = remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
@@ -399,7 +405,7 @@ private fun FocusAction(label: String, onClick: () -> Unit, compact: Boolean) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Icon(Icons.Default.Settings, contentDescription = null,
+        Icon(when (iconType) { "wifi" -> Icons.Default.Wifi; "apps" -> Icons.Default.Apps; else -> Icons.Default.Settings }, contentDescription = label,
             tint = if (focused.value) Background else Accent, modifier = Modifier.size(16.dp))
         Text(label, color = if (focused.value) Background else MainText,
             fontSize = if (compact) 11.sp else 14.sp, fontWeight = FontWeight.SemiBold)
