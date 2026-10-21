@@ -142,7 +142,7 @@ private fun TVHomeScreen(
             containerColor = Panel,
             titleContentColor = MainText,
             textContentColor = MutedText,
-            title = { Text("All Apps", fontWeight = FontWeight.Bold) },
+            title = { Text("Semua Aplikasi", fontWeight = FontWeight.Bold) },
             text = {
                 if (apps.isEmpty()) {
                     Text("No apps available to display.", color = MutedText)
@@ -181,7 +181,7 @@ private fun TVHomeScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAllApps.value = false }) {
-                    Text("Close", color = Accent)
+                    Text("Tutup", color = Accent)
                 }
             }
         )
@@ -231,7 +231,7 @@ private fun TVHomeScreen(
                     .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(if (compact) 22.dp else 26.dp))
             ) {
                 AsyncImage(
-                    model = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&q=85",
+                    model = "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=90",
                     contentDescription = "Featured cinematic landscape",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -249,21 +249,21 @@ private fun TVHomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(Accent))
                     Text(
-                        if (selectedApp.value == null) "WELCOME" else "FEATURED FOR YOU",
+                        if (selectedApp.value == null) "WELCOME" else "PILIHAN UNTUK ANDA",
                         color = Color(0xFFFFAAA4), fontSize = 10.sp,
                         fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp
                     )
                 }
                 Text(
-                    selectedApp.value?.label ?: "What would you like to watch?",
+                    selectedApp.value?.label ?: "Hiburan bermula di sini",
                     color = MainText, fontSize = if (compact) 25.sp else 34.sp,
                     lineHeight = if (compact) 30.sp else 40.sp, fontWeight = FontWeight.Bold,
                     maxLines = 2, overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     when {
-                        selectedApp.value == null -> if (apps.isEmpty()) "Your installed apps will appear here." else "Focus an app to update this panel."
-                        else -> "Selected app • Press OK to launch"
+                        selectedApp.value == null -> if (apps.isEmpty()) "Aplikasi yang dipasang akan dipaparkan di sini." else "Pilih aplikasi untuk melihat butiran."
+                        else -> "Aplikasi dipilih • Tekan OK untuk buka"
                     },
                     color = Color(0xFFD0C5CE), fontSize = if (compact) 12.sp else 15.sp,
                     lineHeight = if (compact) 17.sp else 21.sp
@@ -273,7 +273,7 @@ private fun TVHomeScreen(
                         AppIcon(app, if (compact) 34.dp else 42.dp)
                         Column {
                             Text(app.label, color = MainText, fontSize = if (compact) 13.sp else 15.sp, fontWeight = FontWeight.SemiBold)
-                            Text("Installed on this device", color = Color(0xFFC7B8C4), fontSize = 10.sp)
+                            Text("Dipasang pada peranti ini", color = Color(0xFFC7B8C4), fontSize = 10.sp)
                         }
                     }
                 }
@@ -281,7 +281,7 @@ private fun TVHomeScreen(
             }
             Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Your Apps", color = MainText, fontSize = if (compact) 17.sp else 20.sp, fontWeight = FontWeight.Bold)
+                    Text("Aplikasi Anda", color = MainText, fontSize = if (compact) 17.sp else 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.weight(1f))
                     Text("${apps.size} apps", color = MutedText, fontSize = 11.sp)
                 }
@@ -328,7 +328,7 @@ private fun TVHomeScreen(
             }
             Spacer(Modifier.weight(1f, fill = false))
             Text(
-                if (compact) "Select an app • Press OK to launch" else "◀ ▶ Navigate     •     OK Select     •     Settings",
+                if (compact) "Pilih aplikasi • Tekan OK untuk buka" else "◀ ▶ Navigasi     •     OK Pilih     •     Tetapan",
                 color = MutedText, fontSize = if (compact) 10.sp else 11.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
