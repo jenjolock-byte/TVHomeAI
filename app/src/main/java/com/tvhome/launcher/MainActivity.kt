@@ -2,6 +2,7 @@ package com.tvhome.launcher
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,7 +27,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
@@ -41,28 +42,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-private val Background = Color(0xFF0B1018)
-private val Panel = Color(0xFF151F2C)
-private val PanelLight = Color(0xFF202D3D)
-private val Accent = Color(0xFF69F0C0)
-private val MainText = Color(0xFFF4F7FB)
-private val MutedText = Color(0xFF9AA9BA)
+private val Background = Color(0xFF08090E)
+private val Panel = Color(0xFF171720)
+private val PanelLight = Color(0xFF29232D)
+private val Accent = Color(0xFFFF6B65)
+private val MainText = Color(0xFFF8F7FA)
+private val MutedText = Color(0xFFAAA6B2)
+private val HeroGradient = Brush.horizontalGradient(
+    colors = listOf(Color(0xFF651D2A), Color(0xFF24131F), Color(0xFF101018))
+)
 
 data class LaunchApp(val label: String, val packageName: String, val icon: android.graphics.drawable.Drawable)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = android.graphics.Color.rgb(11, 16, 24)
-        window.navigationBarColor = android.graphics.Color.rgb(11, 16, 24)
+        window.statusBarColor = android.graphics.Color.rgb(8, 9, 14)
+        window.navigationBarColor = android.graphics.Color.rgb(8, 9, 14)
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = Background) {
@@ -72,9 +80,7 @@ class MainActivity : ComponentActivity() {
                             if (intent != null) startActivity(intent)
                             else Toast.makeText(this, "Aplikasi tidak boleh dibuka", Toast.LENGTH_SHORT).show()
                         },
-                        onOpenSettings = {
-                            startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
-                        },
+                        onOpenSettings = { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) },
                         loadApps = {
                             val pm = packageManager
                             val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -101,144 +107,185 @@ private fun TVHomeScreen(
     loadApps: () -> List<LaunchApp>
 ) {
     val apps = remember { mutableStateListOf<LaunchApp>() }
-    LaunchedEffect(Unit) { apps.addAll(loadApps()) }
+    val selectedApp = remember { mutableStateOf<LaunchApp?>(null) }
+    LaunchedEffect(Unit) {
+        apps.addAll(loadApps())
+        selectedApp.value = apps.firstOrNull()
+    }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(Background).padding(horizontal = 48.dp, vertical = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(22.dp)
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize().background(Background)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        val compact = maxWidth < 600.dp
+        Column(
+            modifier = Modifier.fillMaxSize().padding(
+                horizontal = if (compact) 18.dp else 48.dp,
+                vertical = if (compact) 18.dp else 28.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 18.dp else 22.dp)
         ) {
-            Box(
-                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(Accent),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Tv, contentDescription = "TVHomeAI", tint = Background, modifier = Modifier.size(29.dp))
+                Box(
+                    modifier = Modifier.size(if (compact) 40.dp else 48.dp)
+                        .clip(RoundedCornerShape(14.dp)).background(Accent),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Tv, contentDescription = "TVHomeAI", tint = Background,
+                        modifier = Modifier.size(if (compact) 23.dp else 29.dp))
+                }
+                Spacer(Modifier.width(11.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text("TVHomeAI", color = MainText, fontSize = if (compact) 21.sp else 27.sp,
+                        fontWeight = FontWeight.ExtraBold)
+                    Text("Hiburan anda, satu skrin", color = MutedText, fontSize = if (compact) 11.sp else 13.sp)
+                }
+                Spacer(Modifier.weight(1f))
+                FocusAction("Tetapan", onOpenSettings, compact)
             }
-            Spacer(Modifier.width(14.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("TVHomeAI", color = MainText, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
-                Text("Semua hiburan, satu skrin", color = MutedText, fontSize = 13.sp)
-            }
-            Spacer(Modifier.weight(1f))
-            FocusAction("Tetapan", Icons.Default.Settings, onOpenSettings)
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(22.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
             Column(
-                modifier = Modifier.weight(0.92f).clip(RoundedCornerShape(26.dp))
-                    .background(Panel).padding(28.dp),
-                verticalArrangement = Arrangement.spacedBy(13.dp)
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(if (compact) 22.dp else 26.dp))
+                    .background(HeroGradient)
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(if (compact) 22.dp else 26.dp))
+                    .padding(if (compact) 20.dp else 30.dp),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 13.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(Accent))
-                    Text("LAMAN UTAMA", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(Accent))
+                    Text(
+                        if (selectedApp.value == null) "SELAMAT DATANG" else "DIPILIH UNTUK ANDA",
+                        color = Color(0xFFFFAAA4), fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp
+                    )
                 }
-                Text("Apa yang anda mahu tonton?", color = MainText, fontSize = 27.sp, lineHeight = 33.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    if (apps.isEmpty()) "Aplikasi anda akan dipaparkan di sini apabila tersedia."
-                    else "${apps.size} aplikasi sedia untuk dibuka.",
-                    color = MutedText, fontSize = 15.sp, lineHeight = 22.sp
+                    selectedApp.value?.label ?: "Apa yang anda mahu tonton?",
+                    color = MainText, fontSize = if (compact) 25.sp else 34.sp,
+                    lineHeight = if (compact) 30.sp else 40.sp, fontWeight = FontWeight.Bold,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(3.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Icon(Icons.Default.Apps, contentDescription = null, tint = Accent, modifier = Modifier.size(18.dp))
-                    Text("Pilih kad aplikasi menggunakan remote", color = MainText, fontSize = 12.sp)
-                }
-            }
-
-            Column(
-                modifier = Modifier.weight(1.08f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Aplikasi anda", color = MainText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.weight(1f))
-                    Text("${apps.size} aplikasi", color = MutedText, fontSize = 12.sp)
-                }
-                if (apps.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(20.dp))
-                            .background(Panel).padding(20.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Belum ada aplikasi untuk dipaparkan.", color = MutedText, fontSize = 15.sp)
-                    }
-                } else {
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth().weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        items(apps, key = { it.packageName }) { app ->
-                            AppCard(app = app, onClick = { onOpenApp(app.packageName) })
+                Text(
+                    when {
+                        selectedApp.value == null -> if (apps.isEmpty()) "Aplikasi yang dipasang akan muncul di sini." else "Halakan remote pada aplikasi untuk melihat panel ini berubah."
+                        else -> "Aplikasi dipilih • Tekan OK untuk buka"
+                    },
+                    color = Color(0xFFD0C5CE), fontSize = if (compact) 12.sp else 15.sp,
+                    lineHeight = if (compact) 17.sp else 21.sp
+                )
+                selectedApp.value?.let { app ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        AppIcon(app, if (compact) 34.dp else 42.dp)
+                        Column {
+                            Text(app.label, color = MainText, fontSize = if (compact) 13.sp else 15.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Aplikasi terpasang pada peranti ini", color = Color(0xFFC7B8C4), fontSize = 10.sp)
                         }
                     }
                 }
             }
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Panel.copy(alpha = 0.72f))
-                .padding(horizontal = 18.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("TVHOMEAI", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp)
-            Spacer(Modifier.weight(1f))
-            Text("◀ ▶ Navigasi   •   OK Pilih   •   Tetapan untuk sistem", color = MutedText, fontSize = 11.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Aplikasi anda", color = MainText, fontSize = if (compact) 17.sp else 20.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    Text("${apps.size} aplikasi", color = MutedText, fontSize = 11.sp)
+                }
+                if (apps.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+                            .background(Panel).padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Belum ada aplikasi untuk dipaparkan.", color = MutedText, fontSize = 14.sp)
+                    }
+                } else {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        items(apps, key = { it.packageName }) { app ->
+                            AppCard(
+                                app = app,
+                                compact = compact,
+                                selected = selectedApp.value?.packageName == app.packageName,
+                                onFocus = { selectedApp.value = app },
+                                onClick = { onOpenApp(app.packageName) }
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.weight(1f, fill = false))
+            Text(
+                if (compact) "Pilih aplikasi • Tekan untuk buka" else "◀ ▶ Navigasi     •     OK Pilih     •     Tetapan untuk sistem",
+                color = MutedText, fontSize = if (compact) 10.sp else 11.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
     }
 }
 
 @Composable
-private fun AppCard(app: LaunchApp, onClick: () -> Unit) {
+private fun AppIcon(app: LaunchApp, size: androidx.compose.ui.unit.Dp) {
+    AndroidView(
+        factory = { context -> ImageView(context).apply { scaleType = ImageView.ScaleType.FIT_CENTER } },
+        update = { view -> view.setImageDrawable(app.icon) },
+        modifier = Modifier.size(size)
+    )
+}
+
+@Composable
+private fun AppCard(
+    app: LaunchApp,
+    compact: Boolean,
+    selected: Boolean,
+    onFocus: () -> Unit,
+    onClick: () -> Unit
+) {
     val focused = remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
-            .size(width = 136.dp, height = 176.dp)
+            .size(width = if (compact) 104.dp else 136.dp, height = if (compact) 124.dp else 160.dp)
             .graphicsLayer {
                 val scale = if (focused.value) 1.045f else 1f
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (focused.value) PanelLight else Panel)
+            .clip(RoundedCornerShape(if (compact) 17.dp else 20.dp))
+            .background(if (focused.value || selected) PanelLight else Panel)
             .border(
-                width = if (focused.value) 2.dp else 1.dp,
-                color = if (focused.value) Accent else Color(0xFF263342),
-                shape = RoundedCornerShape(20.dp)
+                width = if (focused.value || selected) 2.dp else 1.dp,
+                color = if (focused.value || selected) Accent else Color(0xFF302A35),
+                shape = RoundedCornerShape(if (compact) 17.dp else 20.dp)
             )
-            .onFocusChanged { focused.value = it.isFocused }
+            .onFocusChanged {
+                focused.value = it.isFocused
+                if (it.isFocused) onFocus()
+            }
             .clickable(onClick = onClick)
             .focusable()
-            .padding(14.dp),
+            .padding(if (compact) 12.dp else 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(
-            modifier = Modifier.size(68.dp).clip(RoundedCornerShape(20.dp))
-                .background(if (focused.value) Accent.copy(alpha = 0.16f) else Color(0xFF263747)),
+            modifier = Modifier.size(if (compact) 54.dp else 68.dp)
+                .clip(RoundedCornerShape(if (compact) 14.dp else 18.dp))
+                .background(Color.White.copy(alpha = 0.96f)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                app.label.trim().take(1).uppercase(),
-                color = Accent,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
+            AppIcon(app, if (compact) 43.dp else 55.dp)
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(if (compact) 9.dp else 12.dp))
         Text(
             app.label,
             color = MainText,
-            fontSize = 13.sp,
-            fontWeight = if (focused.value) FontWeight.Bold else FontWeight.Medium,
+            fontSize = if (compact) 10.sp else 13.sp,
+            fontWeight = if (focused.value || selected) FontWeight.Bold else FontWeight.Medium,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
@@ -246,21 +293,23 @@ private fun AppCard(app: LaunchApp, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FocusAction(label: String, icon: ImageVector, onClick: () -> Unit) {
+private fun FocusAction(label: String, onClick: () -> Unit, compact: Boolean) {
     val focused = remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(13.dp))
             .background(if (focused.value) Accent else Panel)
-            .border(1.dp, if (focused.value) Accent else Color(0xFF293747), RoundedCornerShape(14.dp))
+            .border(1.dp, if (focused.value) Accent else Color(0xFF39313C), RoundedCornerShape(13.dp))
             .onFocusChanged { focused.value = it.isFocused }
             .clickable(onClick = onClick)
             .focusable()
-            .padding(horizontal = 17.dp, vertical = 12.dp),
+            .padding(horizontal = if (compact) 12.dp else 17.dp, vertical = if (compact) 10.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(9.dp)
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = if (focused.value) Background else Accent, modifier = Modifier.size(18.dp))
-        Text(label, color = if (focused.value) Background else MainText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Icon(Icons.Default.Settings, contentDescription = null,
+            tint = if (focused.value) Background else Accent, modifier = Modifier.size(16.dp))
+        Text(label, color = if (focused.value) Background else MainText,
+            fontSize = if (compact) 11.sp else 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
