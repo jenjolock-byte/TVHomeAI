@@ -1,6 +1,7 @@
 package com.tvhome.launcher
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.Toast
@@ -9,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +32,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -81,6 +86,12 @@ class MainActivity : ComponentActivity() {
                             else Toast.makeText(this, "Aplikasi tidak boleh dibuka", Toast.LENGTH_SHORT).show()
                         },
                         onOpenSettings = { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) },
+                        onAppInfo = { packageName ->
+                            startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+                        },
+                        onUninstall = { packageName ->
+                            startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$packageName")))
+                        },
                         loadApps = {
                             val pm = packageManager
                             val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -104,9 +115,12 @@ class MainActivity : ComponentActivity() {
 private fun TVHomeScreen(
     onOpenApp: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    onAppInfo: (String) -> Unit,
+    onUninstall: (String) -> Unit,
     loadApps: () -> List<LaunchApp>
 ) {
     val apps = remember { mutableStateListOf<LaunchApp>() }
+    val favorites = remember { mutableStateListOf<String>() }
     val selectedApp = remember { mutableStateOf<LaunchApp?>(null) }
     LaunchedEffect(Unit) {
         apps.addAll(loadApps())
@@ -213,7 +227,22 @@ private fun TVHomeScreen(
                                 compact = compact,
                                 selected = selectedApp.value?.packageName == app.packageName,
                                 onFocus = { selectedApp.value = app },
-                                onClick = { onOpenApp(app.packageName) }
+                                onClick = { onOpenApp(app.packageName) },
+                                isFavorite = favorites.contains(app.packageName),
+                                onToggleFavorite = {
+                                    if (favorites.contains(app.packageName)) favorites.remove(app.packageName)
+                                    else favorites.add(app.packageName)
+                                },
+                                onMove = { direction ->
+                                    val from = apps.indexOfFirst { it.packageName == app.packageName }
+                                    val to = (from + direction).coerceIn(0, apps.lastIndex)
+                                    if (from >= 0 && to != from) {
+                                        val item = apps.removeAt(from)
+                                        apps.add(to, item)
+                                    }
+                                },
+                                onAppInfo = { onAppInfo(app.packageName) },
+                                onUninstall = { onUninstall(app.packageName) }
                             )
                         }
                     }
@@ -238,15 +267,58 @@ private fun AppIcon(app: LaunchApp, size: androidx.compose.ui.unit.Dp) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppCard(
     app: LaunchApp,
     compact: Boolean,
     selected: Boolean,
     onFocus: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
+    onMove: (Int) -> Unit,
+    onAppInfo: () -> Unit,
+    onUninstall: () -> Unit
 ) {
     val focused = remember { mutableStateOf(false) }
+    val showMenu = remember { mutableStateOf(false) }
+    if (showMenu.value) {
+        AlertDialog(
+            onDismissRequest = { showMenu.value = false },
+            containerColor = Panel,
+            titleContentColor = MainText,
+            textContentColor = MutedText,
+            title = { Text(app.label, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    MenuRow("App Info", "Maklumat aplikasi") {
+                        showMenu.value = false
+                        onAppInfo()
+                    }
+                    MenuRow("Move ke kiri", "Ubah kedudukan ikon") {
+                        showMenu.value = false
+                        onMove(-1)
+                    }
+                    MenuRow("Move ke kanan", "Ubah kedudukan ikon") {
+                        showMenu.value = false
+                        onMove(1)
+                    }
+                    MenuRow(if (isFavorite) "Buang daripada Favorite" else "Tambah ke Favorite", "Kegemaran TVHomeAI") {
+                        onToggleFavorite()
+                        showMenu.value = false
+                    }
+                    MenuRow("Uninstall", "Buka pengesahan Android") {
+                        showMenu.value = false
+                        onUninstall()
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showMenu.value = false }) { Text("Tutup", color = Accent) }
+            }
+        )
+    }
     Column(
         modifier = Modifier
             .size(width = if (compact) 104.dp else 136.dp, height = if (compact) 124.dp else 160.dp)
@@ -266,7 +338,10 @@ private fun AppCard(
                 focused.value = it.isFocused
                 if (it.isFocused) onFocus()
             }
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu.value = true }
+            )
             .focusable()
             .padding(if (compact) 12.dp else 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -289,6 +364,23 @@ private fun AppCard(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+@Composable
+private fun MenuRow(title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, color = MainText, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+            Text(subtitle, color = MutedText, fontSize = 11.sp)
+        }
     }
 }
 
