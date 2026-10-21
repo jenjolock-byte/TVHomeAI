@@ -3,12 +3,12 @@ package com.tvhome.launcher
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,13 +54,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.drawable.toBitmap
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -338,9 +339,13 @@ private fun TVHomeScreen(
 
 @Composable
 private fun AppIcon(app: LaunchApp, size: androidx.compose.ui.unit.Dp) {
-    AndroidView(
-        factory = { context -> ImageView(context).apply { scaleType = ImageView.ScaleType.FIT_CENTER } },
-        update = { view -> view.setImageDrawable(app.icon) },
+    val iconBitmap = remember(app.icon) {
+        app.icon.toBitmap(width = 192, height = 192).asImageBitmap()
+    }
+    Image(
+        bitmap = iconBitmap,
+        contentDescription = app.label,
+        contentScale = ContentScale.Fit,
         modifier = Modifier.size(size)
     )
 }
