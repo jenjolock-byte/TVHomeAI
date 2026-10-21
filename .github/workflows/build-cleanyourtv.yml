@@ -1,0 +1,46 @@
+name: Build CleanYourTV stable APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/build-cleanyourtv.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout TVHomeAI workflow
+        uses: actions/checkout@v4
+
+      - name: Checkout CleanYourTV upstream source
+        uses: actions/checkout@v4
+        with:
+          repository: Gathin23/cleanyourtv
+          ref: main
+          path: upstream
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build CleanYourTV release APK
+        working-directory: upstream/launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon test assembleRelease
+
+      - name: Upload APK and test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: CleanYourTV-stable-release
+          path: |
+            upstream/launcher/app/build/outputs/apk/release/*.apk
+            upstream/launcher/app/build/reports/tests/
+          if-no-files-found: error
+          retention-days: 14
