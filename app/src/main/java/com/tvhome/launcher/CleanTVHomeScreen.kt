@@ -43,6 +43,8 @@ fun CleanTVHomeScreen(
     onOpenApp: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenWifi: () -> Unit,
+    onAppInfo: (String) -> Unit,
+    onUninstall: (String) -> Unit,
     loadApps: () -> List<LaunchApp>
 ) {
     val apps = remember { mutableStateListOf<LaunchApp>() }
