@@ -22,10 +22,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -126,9 +128,61 @@ private fun TVHomeScreen(
     val apps = remember { mutableStateListOf<LaunchApp>() }
     val favorites = remember { mutableStateListOf<String>() }
     val selectedApp = remember { mutableStateOf<LaunchApp?>(null) }
+    val showAllApps = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         apps.addAll(loadApps())
         selectedApp.value = apps.firstOrNull()
+    }
+
+    if (showAllApps.value) {
+        AlertDialog(
+            onDismissRequest = { showAllApps.value = false },
+            containerColor = Panel,
+            titleContentColor = MainText,
+            textContentColor = MutedText,
+            title = { Text("All Apps", fontWeight = FontWeight.Bold) },
+            text = {
+                if (apps.isEmpty()) {
+                    Text("No apps available to display.", color = MutedText)
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(apps, key = { it.packageName }) { app ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(PanelLight.copy(alpha = 0.45f))
+                                    .clickable {
+                                        showAllApps.value = false
+                                        onOpenApp(app.packageName)
+                                    }
+                                    .focusable()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                AppIcon(app, 36.dp)
+                                Text(
+                                    app.label,
+                                    color = MainText,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAllApps.value = false }) {
+                    Text("Close", color = Accent)
+                }
+            }
+        )
     }
 
     BoxWithConstraints(
@@ -164,7 +218,7 @@ private fun TVHomeScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     FocusAction("Wi-Fi", onOpenWifi, compact, iconType = "wifi")
                     FocusAction("Settings", onOpenSettings, compact)
-                    FocusAction("Apps", { if (apps.isNotEmpty()) onOpenApp(apps.first().packageName) }, compact, iconType = "apps")
+                    FocusAction("Apps", { showAllApps.value = true }, compact, iconType = "apps")
                 }
             }
 
