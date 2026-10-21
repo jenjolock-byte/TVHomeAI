@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = Background) {
-                    TVHomeScreen(
+                    CleanTVHomeScreen(
                         onOpenApp = { packageName ->
                             val intent = packageManager.getLaunchIntentForPackage(packageName)
                             if (intent != null) startActivity(intent)
