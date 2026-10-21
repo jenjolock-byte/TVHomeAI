@@ -2,7 +2,6 @@ package com.tvhome.launcher
 
 import android.content.Intent
 import android.os.Bundle
-import.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
